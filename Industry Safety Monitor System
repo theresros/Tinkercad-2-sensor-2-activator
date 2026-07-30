@@ -1,0 +1,64 @@
+/*
+  MOTION + PROXIMITY + TEMPERATURE ALERT SYSTEM
+  Sensors  : PIR (D2), Ultrasonic HC-SR04 (D4 Trig, D5 Echo), TMP36 (A0)
+  Actuators: LED indicator (D6), Buzzer alarm (D8)
+*/
+
+#define PIR_PIN     2
+#define TRIG_PIN    4
+#define ECHO_PIN    5
+#define LED_PIN     6
+#define BUZZER_PIN  8
+#define TMP_PIN     A0
+
+int distanceLimit = 15;   // cm, object too close
+float tempThreshold = 30; // celsius, alert if hotter than this
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(PIR_PIN, INPUT);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+}
+
+long readDistanceCM() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  long duration = pulseIn(ECHO_PIN, HIGH);
+  return duration * 0.034 / 2;
+}
+
+float readTemperatureC() {
+  int reading = analogRead(TMP_PIN);
+  float voltage = reading * (5.0 / 1024.0);
+  return (voltage - 0.5) * 100.0;  // TMP36: 10mV per degree, 0.5V offset at 0C
+}
+
+void loop() {
+  int motion      = digitalRead(PIR_PIN);
+  long distance   = readDistanceCM();
+  float temperature = readTemperatureC();
+
+  bool intrusion   = (motion == HIGH);
+  bool tooClose    = (distance > 0 && distance < distanceLimit);
+  bool overheating = (temperature > tempThreshold);
+
+  bool alert = intrusion || tooClose || overheating;
+
+  digitalWrite(LED_PIN, alert ? HIGH : LOW);
+  if (alert) {
+    tone(BUZZER_PIN, 1000, 300);
+  }
+
+  Serial.print("Motion: "); Serial.print(motion);
+  Serial.print(" | Dist: "); Serial.print(distance);
+  Serial.print(" | Temp: "); Serial.print(temperature);
+  Serial.print(" | ALERT: "); Serial.println(alert ? "YES" : "no");
+
+  delay(500);
+}
