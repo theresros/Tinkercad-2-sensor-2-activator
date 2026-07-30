@@ -1,0 +1,55 @@
+#include <Servo.h>
+
+// ---- Pin Definitions ----
+int tiltPin = 6;
+int forcePin = A0;
+int redPin = 9;
+int greenPin = 10;
+int bluePin = 11;
+int servoPin = 5;
+
+Servo myServo;
+int pressThreshold = 300; // adjust based on testing
+
+void setup() {
+  pinMode(tiltPin, INPUT_PULLUP);
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+  myServo.attach(servoPin);
+  Serial.begin(9600);
+}
+
+void loop() {
+  // ---- Read Sensors ----
+  int tilted = digitalRead(tiltPin);      // LOW = tilted
+  int forceValue = analogRead(forcePin);  // higher = more pressure
+
+  // ---- Sensor 1 -> Actuator 1: Tilt controls RGB color ----
+  if (tilted == LOW) {
+    setColor(255, 0, 0); // tilted -> red
+  } else {
+    setColor(0, 255, 0); // upright -> green
+  }
+
+  // ---- Sensor 2 -> Actuator 2: Force controls Servo ----
+  if (forceValue > pressThreshold) {
+    myServo.write(90); // pressed -> move to 90 degrees
+  } else {
+    myServo.write(0);  // released -> return to 0 degrees
+  }
+
+  // ---- Debugging ----
+  Serial.print("Tilt: ");
+  Serial.print(tilted == LOW ? "TILTED" : "UPRIGHT");
+  Serial.print(" | Force: ");
+  Serial.println(forceValue);
+
+  delay(200);
+}
+
+void setColor(int r, int g, int b) {
+  analogWrite(redPin, r);
+  analogWrite(greenPin, g);
+  analogWrite(bluePin, b);
+}
