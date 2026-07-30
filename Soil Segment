@@ -1,0 +1,42 @@
+// ---- Pin Definitions ----
+int pirPin = 7;
+int soilPin = A0;
+int motorPin = 9;
+int segmentPin = 2; // representing one segment as an indicator
+
+int dryThreshold = 400; // adjust based on testing
+
+void setup() {
+  pinMode(pirPin, INPUT);
+  pinMode(motorPin, OUTPUT);
+  pinMode(segmentPin, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  // ---- Read Sensors ----
+  int motionDetected = digitalRead(pirPin);   // HIGH = motion detected
+  int soilMoisture = analogRead(soilPin);     // lower = drier soil
+
+  // ---- Sensor 1 -> Actuator 1: Soil Moisture controls DC Motor (pump) ----
+  if (soilMoisture < dryThreshold) {
+    analogWrite(motorPin, 200); // dry soil -> run motor (pump)
+  } else {
+    analogWrite(motorPin, 0);   // moist soil -> motor off
+  }
+
+  // ---- Sensor 2 -> Actuator 2: PIR controls Segment Display ----
+  if (motionDetected == HIGH) {
+    digitalWrite(segmentPin, HIGH); // motion -> segment on
+  } else {
+    digitalWrite(segmentPin, LOW);  // no motion -> segment off
+  }
+
+  // ---- Debugging ----
+  Serial.print("Soil Moisture: ");
+  Serial.print(soilMoisture);
+  Serial.print(" | Motion: ");
+  Serial.println(motionDetected == HIGH ? "YES" : "NO");
+
+  delay(200);
+}
